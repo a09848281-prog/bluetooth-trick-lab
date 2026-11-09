@@ -22,6 +22,7 @@ Android 13以降を中心に、Bluetooth LE・Wi-Fi・GPS・端末センサー�
 ### Androidセンサー・端末診断
 - GPS位置・精度・更新経過時間を表示
 - 加速度・ジャイロ・回転ベクトル・歩数検出センサーの搭載状況を診断
+- 加速度の揺れとジャイロの回転量から端末の動作状態を判定し、動作中のWi-Fi位置サンプル採用を避ける
 - 回転ベクトルが使える端末では方位を表示
 - BLE・Wi-Fi・GPS・Wi-Fi RTT・UWBの端末機能を診断
 - Android 13ではAndroid 16のRangingManagerや標準Bluetooth Channel Sounding APIを前提にしません
