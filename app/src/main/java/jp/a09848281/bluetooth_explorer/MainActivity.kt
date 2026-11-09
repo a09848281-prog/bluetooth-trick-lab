@@ -19,7 +19,7 @@ import kotlin.math.pow
 
 class MainActivity : Activity() {
     private val permissionRequest = 41
-    private lateinit var adapter: BluetoothAdapter
+    private var adapter: BluetoothAdapter? = null
     private var scanner: BluetoothLeScanner? = null
     private val handler = Handler(Looper.getMainLooper())
     private val devices = linkedMapOf<String, SeenDevice>()
@@ -112,11 +112,16 @@ class MainActivity : Activity() {
             status.text = "先にBluetooth探索の権限を許可してください。"
             return
         }
-        if (!adapter.isEnabled) {
+        val btAdapter = adapter
+        if (btAdapter == null) {
+            status.text = "この端末はBluetoothに対応していません。"
+            return
+        }
+        if (!btAdapter.isEnabled) {
             status.text = "Androidの設定でBluetoothをオンにしてください。"
             return
         }
-        scanner = adapter.bluetoothLeScanner
+        scanner = btAdapter.bluetoothLeScanner
         if (scanner == null) {
             status.text = "BLEスキャナーを利用できません。"
             return
@@ -143,7 +148,7 @@ class MainActivity : Activity() {
             val name = result.scanRecord?.deviceName?.takeIf { it.isNotBlank() }
                 ?: try { device.name?.takeIf { it.isNotBlank() } } catch (_: SecurityException) { null }
                 ?: "名称を公開していない機器"
-            val tx = result.scanRecord?.txPowerLevel?.takeIf { it != Int.MIN_VALUE } ?: -59
+            val tx = result.scanRecord?.txPowerLevel?.takeIf { it in -127..20 } ?: -59
             devices[address] = SeenDevice(name, address, result.rssi, tx)
             runOnUiThread { renderDevices() }
         }
