@@ -316,11 +316,11 @@ class MainActivity : Activity(), SensorEventListener {
         fun has(type: Int) = sm.getDefaultSensor(type) != null
         val direction = heading?.let { String.format(Locale.US, "%.0f°", it) } ?: "取得不可"
         val motion = motionState()
-        sensorText.text = "端末状態: " + motion + " / 方位: " + direction + "\\n" +
+        sensorText.text = "端末状態: " + motion + " / 方位: " + direction + "\n" +
             "加速度: " + (if (has(Sensor.TYPE_ACCELEROMETER)) "あり" else "なし") +
             " / ジャイロ: " + (if (has(Sensor.TYPE_GYROSCOPE)) "あり" else "なし") +
             " / 回転ベクトル: " + (if (has(Sensor.TYPE_ROTATION_VECTOR)) "あり" else "なし") +
-            "\n方位: " + direction + " / アプリ起動後の歩数イベント: " + steps
+            " / アプリ起動後の歩数イベント: " + steps
     }
 
     private fun diagnose() {
