@@ -316,8 +316,7 @@ class MainActivity : Activity(), SensorEventListener {
         sensorText.text = "端末状態: " + motion + " / 方位: " + direction + "\n" +
             "加速度: " + (if (has(Sensor.TYPE_ACCELEROMETER)) "あり" else "なし") +
             " / ジャイロ: " + (if (has(Sensor.TYPE_GYROSCOPE)) "あり" else "なし") +
-            " / 回転ベクトル: " + (if (has(Sensor.TYPE_ROTATION_VECTOR)) "あり" else "なし") +
-
+            " / 回転ベクトル: " + (if (has(Sensor.TYPE_ROTATION_VECTOR)) "あり" else "なし")
     }
 
     private fun diagnose() {
