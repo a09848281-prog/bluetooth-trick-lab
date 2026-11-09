@@ -45,6 +45,9 @@ class MainActivity : Activity(), SensorEventListener {
     private var selectedAddress: String? = null
     private var heading: Float? = null
     private var steps = 0
+    private var gyroRate = 0.0
+    private var lastGyroTime = 0L
+    private val accelMagnitudes = mutableListOf<Double>()
     private var lastWifiScan = 0L
 
     private lateinit var status: TextView
@@ -277,12 +280,23 @@ class MainActivity : Activity(), SensorEventListener {
 
     private fun registerSensors() {
         val sm = sensorManager ?: return
+        sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+        sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
         sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
         sm.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
         when (event.sensor.type) {
+            Sensor.TYPE_ACCELEROMETER -> {
+                val magnitude = sqrt(event.values[0].toDouble().pow(2) + event.values[1].toDouble().pow(2) + event.values[2].toDouble().pow(2))
+                accelMagnitudes.add(magnitude)
+                while (accelMagnitudes.size > 24) accelMagnitudes.removeAt(0)
+            }
+            Sensor.TYPE_GYROSCOPE -> {
+                gyroRate = sqrt(event.values[0].toDouble().pow(2) + event.values[1].toDouble().pow(2) + event.values[2].toDouble().pow(2))
+                lastGyroTime = System.currentTimeMillis()
+            }
             Sensor.TYPE_ROTATION_VECTOR -> {
                 val matrix = FloatArray(9)
                 SensorManager.getRotationMatrixFromVector(matrix, event.values)
@@ -301,7 +315,9 @@ class MainActivity : Activity(), SensorEventListener {
         val sm = sensorManager ?: return
         fun has(type: Int) = sm.getDefaultSensor(type) != null
         val direction = heading?.let { String.format(Locale.US, "%.0f°", it) } ?: "取得不可"
-        sensorText.text = "加速度: " + (if (has(Sensor.TYPE_ACCELEROMETER)) "あり" else "なし") +
+        val motion = motionState()
+        sensorText.text = "端末状態: " + motion + " / 方位: " + direction + "\\n" +
+            "加速度: " + (if (has(Sensor.TYPE_ACCELEROMETER)) "あり" else "なし") +
             " / ジャイロ: " + (if (has(Sensor.TYPE_GYROSCOPE)) "あり" else "なし") +
             " / 回転ベクトル: " + (if (has(Sensor.TYPE_ROTATION_VECTOR)) "あり" else "なし") +
             "\n方位: " + direction + " / アプリ起動後の歩数イベント: " + steps
@@ -385,6 +401,23 @@ class MainActivity : Activity(), SensorEventListener {
         if (values.size < 2) return 0.0
         val avg = values.average()
         return sqrt(values.sumOf { (it - avg).pow(2) } / (values.size - 1))
+    }
+
+    private fun motionState(): String {
+        val sm = sensorManager ?: return "センサー情報なし"
+        val hasAccel = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
+        val hasGyro = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null
+        if (hasAccel && accelMagnitudes.size < 8) return "静止判定中"
+        if (hasAccel && deviation(accelMagnitudes) > 0.45) return "動作中・測定待ち"
+        if (hasGyro && System.currentTimeMillis() - lastGyroTime < 3000L && gyroRate > 0.12) return "端末回転中・測定待ち"
+        val loc = currentLocation
+        if (!hasAccel && loc != null && loc.hasSpeed() && loc.speed > 0.5f) return "移動中・測定待ち"
+        return "静止状態の可能性"
+    }
+
+    private fun isMotionStable(): Boolean {
+        val state = motionState()
+        return state == "静止状態の可能性"
     }
 
     private fun calibrationKey(address: String) = "cal_" + address.replace(":", "")
@@ -559,7 +592,7 @@ class MainActivity : Activity(), SensorEventListener {
             }
             val loc = currentLocation
             val age = if (loc == null) Long.MAX_VALUE else System.currentTimeMillis() - loc.time
-            if (loc != null && age in 0..30000L && loc.accuracy <= 25f) {
+            if (loc != null && age in 0..30000L && loc.accuracy <= 25f && isMotionStable()) {
                 wifi.values.forEach { ap ->
                     val list = observations.getOrPut(ap.bssid) { mutableListOf() }
                     list.add(Observation(loc.latitude, loc.longitude, ap.rssi, loc.accuracy, System.currentTimeMillis()))
@@ -567,7 +600,7 @@ class MainActivity : Activity(), SensorEventListener {
                     saveObservations(ap.bssid, list)
                 }
                 status.text = "Wi-Fi " + wifi.size + "件。GPS精度±" + loc.accuracy.roundToInt() + "mの観測を保存しました。"
-            } else status.text = "Wi-Fi " + wifi.size + "件。GPS精度不足または位置情報が古いため地点保存なし。"
+            } else status.text = "Wi-Fi " + wifi.size + "件。GPS精度不足・位置情報が古い・端末動作中のため地点保存なし。"
             renderWifi()
             renderEstimates()
         } catch (e: SecurityException) {
