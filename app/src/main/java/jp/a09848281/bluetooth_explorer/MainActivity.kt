@@ -186,10 +186,10 @@ class MainActivity : Activity(), SensorEventListener {
 
         root.addView(section("ℹ️ 精度とプライバシー"))
         root.addView(label(
-            "• RSSIだけでは正確な距離・方向は測れません。未校正の距離は表示しません。\\n" +
-            "• Bluetooth距離は実測校正が3距離以上あり、モデル品質が十分な場合だけ参考値を表示します。\\n" +
-            "• Wi-Fiの最強観測地点はルーター設置場所とは限りません。実座標を断定しません。\\n" +
-            "• GPS精度25m以内・位置更新30秒以内の観測だけを位置分析に採用します。\\n" +
+            "• RSSIだけでは正確な距離・方向は測れません。未校正の距離は表示しません。\n" +
+            "• Bluetooth距離は実測校正が3距離以上あり、モデル品質が十分な場合だけ参考値を表示します。\n" +
+            "• Wi-Fiの最強観測地点はルーター設置場所とは限りません。実座標を断定しません。\n" +
+            "• GPS精度25m以内・位置更新30秒以内の観測だけを位置分析に採用します。\n" +
             "• 測定データは端末内に保存し、外部サービスへ送信しません。",
             12f
         ).apply { setTextColor(0xFFFFD58A.toInt()) })
@@ -271,7 +271,7 @@ class MainActivity : Activity(), SensorEventListener {
             else -> "精度不足"
         }
         locationText.text = String.format(Locale.JAPAN,
-            "現在地: %.6f, %.6f\\n推定精度: ±%.1fm（%s） / 更新: %d秒前",
+            "現在地: %.6f, %.6f\n推定精度: ±%.1fm（%s） / 更新: %d秒前",
             loc.latitude, loc.longitude, loc.accuracy, quality, age)
     }
 
@@ -304,7 +304,7 @@ class MainActivity : Activity(), SensorEventListener {
         sensorText.text = "加速度: " + if (has(Sensor.TYPE_ACCELEROMETER)) "あり" else "なし" +
             " / ジャイロ: " + (if (has(Sensor.TYPE_GYROSCOPE)) "あり" else "なし") +
             " / 回転ベクトル: " + (if (has(Sensor.TYPE_ROTATION_VECTOR)) "あり" else "なし") +
-            "\\n方位: " + direction + " / アプリ起動後の歩数イベント: " + steps
+            "\n方位: " + direction + " / アプリ起動後の歩数イベント: " + steps
     }
 
     private fun diagnose() {
@@ -315,17 +315,17 @@ class MainActivity : Activity(), SensorEventListener {
         val uwb = api >= 31 && pm.hasSystemFeature(PackageManager.FEATURE_UWB)
         fun sensor(type: Int) = sm?.getDefaultSensor(type) != null
         diagnosticsText.text =
-            "Android " + Build.VERSION.RELEASE + " / API " + api + "\\n" +
+            "Android " + Build.VERSION.RELEASE + " / API " + api + "\n" +
             "BLE: " + pm.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) +
             " / Wi-Fi: " + pm.hasSystemFeature(PackageManager.FEATURE_WIFI) +
-            " / GPS: " + pm.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS) + "\\n" +
+            " / GPS: " + pm.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS) + "\n" +
             "Wi-Fi RTT: " + (if (rtt) "端末機能あり（AP対応も必要）" else "非対応/未確認") +
-            " / UWB: " + (if (uwb) "端末機能あり" else "非対応") + "\\n" +
-            "Channel Sounding: Android 13では標準APIなし\\n" +
+            " / UWB: " + (if (uwb) "端末機能あり" else "非対応") + "\n" +
+            "Channel Sounding: Android 13では標準APIなし\n" +
             "加速度: " + sensor(Sensor.TYPE_ACCELEROMETER) +
             " / ジャイロ: " + sensor(Sensor.TYPE_GYROSCOPE) +
             " / 回転ベクトル: " + sensor(Sensor.TYPE_ROTATION_VECTOR) +
-            " / 歩数検出: " + sensor(Sensor.TYPE_STEP_DETECTOR) + "\\n" +
+            " / 歩数検出: " + sensor(Sensor.TYPE_STEP_DETECTOR) + "\n" +
             "位置権限: " + hasLocationPermission() +
             " / Bluetoothスキャン権限: " + (api < 31 || hasPermission(Manifest.permission.BLUETOOTH_SCAN))
         renderSensors()
@@ -431,7 +431,7 @@ class MainActivity : Activity(), SensorEventListener {
             bleText.text = "検出待ちです。BLE広告を発信している機器が対象です。"
             return
         }
-        bleText.text = ble.values.sortedByDescending { median(it.samples.map { s -> s.rssi.toDouble() }) }.joinToString("\\n\\n") { d ->
+        bleText.text = ble.values.sortedByDescending { median(it.samples.map { s -> s.rssi.toDouble() }) }.joinToString("\n\n") { d ->
             val values = d.samples.map { it.rssi.toDouble() }
             val med = median(values)
             val sd = deviation(values)
@@ -453,11 +453,11 @@ class MainActivity : Activity(), SensorEventListener {
             val distance = if (estimate == null) "距離: 表示不可（3距離以上の校正とモデル品質が必要）"
                 else String.format(Locale.US, "校正モデル推定: %.1fm（R²=%.2f）", estimate.first, estimate.second.r2)
             val selected = if (selectedAddress == d.address) " ★校正対象" else ""
-            d.name + selected + "\\nRSSI中央値: " + med.roundToInt() + " dBm / 平均: " +
-                String.format(Locale.US, "%.1f", values.average()) + " dBm\\nばらつき: σ=" +
+            d.name + selected + "\nRSSI中央値: " + med.roundToInt() + " dBm / 平均: " +
+                String.format(Locale.US, "%.1f", values.average()) + " dBm\nばらつき: σ=" +
                 String.format(Locale.US, "%.1f", sd) + " dB（" + stability + "） / サンプル: " +
-                values.size + "回\\n" + trend + "\\n" + distance + "\\n広告TX Power: " +
-                (d.txPower?.toString() ?: "不明") + " dBm（距離計算には未使用）\\nID: " + d.address
+                values.size + "回\n" + trend + "\n" + distance + "\n広告TX Power: " +
+                (d.txPower?.toString() ?: "不明") + " dBm（距離計算には未使用）\nID: " + d.address
         }
     }
 
@@ -492,8 +492,8 @@ class MainActivity : Activity(), SensorEventListener {
             orientation = LinearLayout.VERTICAL
             setPadding(24, 8, 24, 0)
             addView(TextView(this@MainActivity).apply {
-                text = "機器: " + device.name + "\\n現在のRSSI中央値: " + current.roundToInt() +
-                    " dBm\\nこの場所から機器までの実測距離を入力してください。\\n異なる距離で最低3点が必要です。\\n登録済み: " + points.size + "点"
+                text = "機器: " + device.name + "\n現在のRSSI中央値: " + current.roundToInt() +
+                    " dBm\nこの場所から機器までの実測距離を入力してください。\n異なる距離で最低3点が必要です。\n登録済み: " + points.size + "点"
             })
             addView(input)
         }
@@ -584,7 +584,7 @@ class MainActivity : Activity(), SensorEventListener {
             wifiText.text = "アクセスポイントが見つかりません。Wi-Fiをオンにして再試行してください。"
             return
         }
-        wifiText.text = wifi.values.sortedByDescending { it.rssi }.joinToString("\\n\\n") { ap ->
+        wifiText.text = wifi.values.sortedByDescending { it.rssi }.joinToString("\n\n") { ap ->
             val level = when {
                 ap.rssi >= -50 -> "非常に強い"
                 ap.rssi >= -60 -> "強い"
@@ -592,9 +592,9 @@ class MainActivity : Activity(), SensorEventListener {
                 ap.rssi >= -80 -> "弱い"
                 else -> "非常に弱い"
             }
-            "📶 " + ap.ssid + "\\n強度: " + ap.rssi + " dBm（" + level + "）\\n周波数: " +
-                ap.frequency + " MHz / " + channel(ap.frequency) + "\\n" + ap.capabilities +
-                "\\nBSSID: " + ap.bssid + "\\n観測記録: " + (observations[ap.bssid]?.size ?: 0) + "件"
+            "📶 " + ap.ssid + "\n強度: " + ap.rssi + " dBm（" + level + "）\n周波数: " +
+                ap.frequency + " MHz / " + channel(ap.frequency) + "\n" + ap.capabilities +
+                "\nBSSID: " + ap.bssid + "\n観測記録: " + (observations[ap.bssid]?.size ?: 0) + "件"
         }
     }
 
@@ -630,15 +630,15 @@ class MainActivity : Activity(), SensorEventListener {
                 points.size >= 3 -> "参考情報（GPS誤差・屋内反射に注意）"
                 else -> "測定地点不足"
             }
-            "📍 " + name + "\\n異なる観測地点: " + points.size + " / 平均RSSI: " +
-                String.format(Locale.US, "%.1f", avg) + " dBm\\n最強観測地点: " +
+            "📍 " + name + "\n異なる観測地点: " + points.size + " / 平均RSSI: " +
+                String.format(Locale.US, "%.1f", avg) + " dBm\n最強観測地点: " +
                 String.format(Locale.US, "%.6f, %.6f", strongest.lat, strongest.lon) +
-                "\\n上位地点の広がり: 約" + spread.roundToInt() + "m / " + quality +
-                "\\n※最強地点はルーターの設置場所とは限りません。"
+                "\n上位地点の広がり: 約" + spread.roundToInt() + "m / " + quality +
+                "\n※最強地点はルーターの設置場所とは限りません。"
         }
         estimateText.text = if (lines.isEmpty())
-            "まだ観測地点がありません。Wi-Fiスキャン時にGPS精度25m以内・位置更新30秒以内なら自動保存します。\\n同じBSSIDを8m以上離れた3地点以上で測定してください。"
-        else lines.joinToString("\\n\\n")
+            "まだ観測地点がありません。Wi-Fiスキャン時にGPS精度25m以内・位置更新30秒以内なら自動保存します。\n同じBSSIDを8m以上離れた3地点以上で測定してください。"
+        else lines.joinToString("\n\n")
     }
 
     private fun loadObservations() {
@@ -688,18 +688,18 @@ class MainActivity : Activity(), SensorEventListener {
             try {
                 contentResolver.openOutputStream(uri)?.use { stream ->
                     OutputStreamWriter(stream, Charsets.UTF_8).use { writer ->
-                        writer.write("type,name,id,rssi_dbm,latitude,longitude,accuracy_m,time_ms\\n")
+                        writer.write("type,name,id,rssi_dbm,latitude,longitude,accuracy_m,time_ms\n")
                         ble.values.forEach { device ->
                             device.samples.forEach { sample ->
                                 writer.write("Bluetooth," + csv(device.name) + "," + csv(device.address) + "," +
-                                    sample.rssi + ",,,," + sample.time + "\\n")
+                                    sample.rssi + ",,,," + sample.time + "\n")
                             }
                         }
                         observations.forEach { entry ->
                             entry.value.forEach { obs ->
                                 writer.write("WiFi," + csv(wifi[entry.key]?.ssid ?: "saved AP") + "," +
                                     csv(entry.key) + "," + obs.rssi + "," + obs.lat + "," + obs.lon + "," +
-                                    obs.accuracy + "," + obs.time + "\\n")
+                                    obs.accuracy + "," + obs.time + "\n")
                             }
                         }
                     }
