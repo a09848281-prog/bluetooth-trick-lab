@@ -173,8 +173,7 @@ class MainActivity : Activity() {
     }
 
     private fun hasLocationPermission() =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun requestNeededPermissions() {
         val missing = requiredPermissions().filter {
@@ -319,7 +318,8 @@ class MainActivity : Activity() {
                 wifiNow[bssid] = WifiAp(ssid, bssid, r.level, r.frequency, r.capabilities ?: "")
             }
             val loc = currentLocation
-            if (loc != null && loc.accuracy <= 100f) {
+            val locationFresh = loc != null && System.currentTimeMillis() - loc.time <= 60_000L
+            if (loc != null && locationFresh && loc.accuracy <= 50f) {
                 wifiNow.values.forEach { ap ->
                     val list = observations.getOrPut(ap.bssid) { mutableListOf() }
                     list.add(Observation(loc.latitude, loc.longitude, ap.rssi, loc.accuracy, System.currentTimeMillis()))
@@ -386,7 +386,7 @@ class MainActivity : Activity() {
             "• $name\n候補中心: ${"%.5f".format(Locale.US, lat)}, ${"%.5f".format(Locale.US, lon)}\n測定地点: ${strongest.size} / 広がり: 約 ${spread.roundToInt()}m\n信頼度: $confidence"
         }
         estimateText.text = if (lines.isEmpty()) {
-            "まだ位置候補を計算できません。GPS精度100m以内で、同じBSSIDを8m以上離れた3地点以上からスキャンしてください。"
+            "まだ位置候補を計算できません。GPS精度50m以内で、位置情報が新しい状態のときに、同じBSSIDを8m以上離れた3地点以上からスキャンしてください。"
         } else {
             "複数地点のRSSIを重み付けした候補です。ルーターの実座標ではありません。\n\n" + lines.joinToString("\n\n")
         }
