@@ -301,7 +301,7 @@ class MainActivity : Activity(), SensorEventListener {
         val sm = sensorManager ?: return
         fun has(type: Int) = sm.getDefaultSensor(type) != null
         val direction = heading?.let { String.format(Locale.US, "%.0f°", it) } ?: "取得不可"
-        sensorText.text = "加速度: " + if (has(Sensor.TYPE_ACCELEROMETER)) "あり" else "なし" +
+        sensorText.text = "加速度: " + (if (has(Sensor.TYPE_ACCELEROMETER)) "あり" else "なし") +
             " / ジャイロ: " + (if (has(Sensor.TYPE_GYROSCOPE)) "あり" else "なし") +
             " / 回転ベクトル: " + (if (has(Sensor.TYPE_ROTATION_VECTOR)) "あり" else "なし") +
             "\n方位: " + direction + " / アプリ起動後の歩数イベント: " + steps
@@ -418,10 +418,14 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun calibratedDistance(address: String, rssi: Double): Pair<Double, Model>? {
-        val model = fit(loadCalibration(address)) ?: return null
+        val points = loadCalibration(address)
+        val model = fit(points) ?: return null
         if (model.r2 < 0.70) return null
         val distance = 10.0.pow((rssi - model.intercept) / model.slope)
-        if (!distance.isFinite() || distance !in 0.2..100.0) return null
+        val calibratedMin = points.minOf { it.distance }
+        val calibratedMax = points.maxOf { it.distance }
+        // Never extrapolate beyond the distances that were actually measured.
+        if (!distance.isFinite() || distance < calibratedMin || distance > calibratedMax) return null
         return Pair(distance, model)
     }
 
