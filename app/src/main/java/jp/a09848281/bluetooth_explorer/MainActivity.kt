@@ -44,7 +44,6 @@ class MainActivity : Activity(), SensorEventListener {
     private var receiverRegistered = false
     private var selectedAddress: String? = null
     private var heading: Float? = null
-    private var steps = 0
     private var gyroRate = 0.0
     private var lastGyroTime = 0L
     private val accelMagnitudes = mutableListOf<Double>()
@@ -283,7 +282,6 @@ class MainActivity : Activity(), SensorEventListener {
         sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
         sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
         sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
-        sm.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -304,7 +302,6 @@ class MainActivity : Activity(), SensorEventListener {
                 SensorManager.getOrientation(matrix, orientation)
                 heading = (Math.toDegrees(orientation[0].toDouble()).toFloat() + 360f) % 360f
             }
-            Sensor.TYPE_STEP_DETECTOR -> steps++
         }
         renderSensors()
     }
@@ -320,7 +317,7 @@ class MainActivity : Activity(), SensorEventListener {
             "加速度: " + (if (has(Sensor.TYPE_ACCELEROMETER)) "あり" else "なし") +
             " / ジャイロ: " + (if (has(Sensor.TYPE_GYROSCOPE)) "あり" else "なし") +
             " / 回転ベクトル: " + (if (has(Sensor.TYPE_ROTATION_VECTOR)) "あり" else "なし") +
-            " / アプリ起動後の歩数イベント: " + steps
+
     }
 
     private fun diagnose() {
